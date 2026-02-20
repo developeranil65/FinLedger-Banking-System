@@ -18,7 +18,8 @@ app.use(cors({
     origin: [
         "http://localhost:5173",   // Vite dev server
         "http://localhost",        // Docker nginx (port 80)
-        "http://localhost:80"
+        "http://localhost:80",
+        "https://finledger-frontend-developeranil65.s3-website.eu-north-1.amazonaws.com"
     ],
     credentials: true
 }))

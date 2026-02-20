@@ -9,7 +9,7 @@ import axios from "axios"
  *   - Interceptor attaches the Bearer token from localStorage
  */
 const api = axios.create({
-    baseURL: "/api",
+    baseURL: "http://16.171.200.39:3000/api",
     withCredentials: true,
     headers: {
         "Content-Type": "application/json"
