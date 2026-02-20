@@ -32,7 +32,7 @@ The pipeline is triggered on every push to the `main` branch.
     *   pushes images to Amazon ECR (Elastic Container Registry).
 3.  **Deploy**: AWS CodeDeploy updates the ECS Fargate Service with the new image definitions.
 
-![Deployment Pipeline](https://placeholder-image-url.com/deployment-pipeline.png)
+![Deployment Pipeline](./public/cicd%20arch.png)
 
 ### Infrastructure Prerequisites
 
