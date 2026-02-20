@@ -1,4 +1,6 @@
-require("dotenv").config()
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const app = require("./src/app")
 const connectToDB = require("./src/config/db")
