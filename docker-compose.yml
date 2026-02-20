@@ -1,0 +1,90 @@
+services:
+
+  #  API — Express + BullMQ Workers
+  api:
+    build:
+      context: ./Backend-Ledger
+      dockerfile: Dockerfile
+    container_name: banking-ledger-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+
+      # ── Database + Cache ──
+      MONGO_URI: mongodb://mongo:27017/backend-ledger?replicaSet=rs0&directConnection=true
+      REDIS_URL: redis://redis:6379
+
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_SECRET: ${JWT_SECRET_KEY}
+
+      # Nodemailer (Google OAuth2 SMTP)
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+      REFRESH_TOKEN: ${REFRESH_TOKEN}
+      EMAIL_USER: ${EMAIL_USER}
+
+      # Google OAuth (Passport.js)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      # Logging
+      LOG_LEVEL: info
+
+      # Rate Limiting
+      RATE_LIMIT_AUTH_MAX: 10
+      RATE_LIMIT_AUTH_WINDOW_MS: 900000
+      RATE_LIMIT_TXN_MAX: 30
+      RATE_LIMIT_TXN_WINDOW_MS: 900000
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+
+  #  Frontend
+  frontend:
+    build:
+      context: ./Frontend-Ledger
+      dockerfile: Dockerfile
+    container_name: banking-ledger-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  #  MongoDB
+  mongo:
+    image: mongo:7
+    container_name: banking-ledger-mongo
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all" ]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  mongo-init:
+    image: mongo:7
+    restart: "no"
+    depends_on:
+      - mongo
+    command: >
+      mongosh --host mongo:27017 --eval  'try { rs.status() } catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongo:27017" }] }) }'
+
+  #  Redis — Cache + BullMQ job broker
+  redis:
+    image: redis:7-alpine
+    container_name: banking-ledger-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+# Named volumes
+volumes:
+  mongo_data:
+  redis_data:

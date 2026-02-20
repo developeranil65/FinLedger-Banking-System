@@ -1,0 +1,82 @@
+# ═══════════════════════════════════════════════════════════════
+#  Docker Compose — Banking Ledger Production Stack
+# ═══════════════════════════════════════════════════════════════
+#
+#  This file orchestrates THREE containers:
+#    1. api   — Our Express + BullMQ application
+#    2. mongo — MongoDB (persistent storage)
+#    3. redis — Redis (caching + BullMQ job queue)
+#
+#  HOW TO RUN:
+#    docker compose up --build
+#
+#  HOW TO STOP:
+#    docker compose down
+#
+#  HOW TO REMOVE VOLUMES (reset all data):
+#    docker compose down -v
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ────────────────────────────────────
+  #  API — Express + BullMQ Workers
+  # ────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: banking-ledger-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Point to container hostnames (Docker DNS resolves these)
+      MONGO_URI: mongodb://mongo:27017/backend-ledger
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+      REFRESH_TOKEN: ${REFRESH_TOKEN}
+      EMAIL_USER: ${EMAIL_USER}
+      LOG_LEVEL: info
+      RATE_LIMIT_AUTH_MAX: 10
+      RATE_LIMIT_AUTH_WINDOW_MS: 900000
+      RATE_LIMIT_TXN_MAX: 30
+      RATE_LIMIT_TXN_WINDOW_MS: 900000
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+
+  # ────────────────────────────────────
+  #  MongoDB — Source of truth for ledger
+  # ────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: banking-ledger-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      # Named volume for data persistence across container restarts.
+      # Without this, all data is lost when the container is removed.
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  # ────────────────────────────────────
+  #  Redis — Cache + BullMQ job broker
+  # ────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: banking-ledger-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+# ── Named volumes ──
+# These survive `docker compose down` (but not `down -v`)
+volumes:
+  mongo_data:
+  redis_data:
