@@ -15,17 +15,13 @@ const app = express()
  * Credentials enabled for JWT cookies.
  */
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost",
-    "http://localhost:80",
-    "http://finledger-frontend-developeranil65.s3-website.eu-north-1.amazonaws.com",
-    "https://finledger-frontend-developeranil65.s3-website.eu-north-1.amazonaws.com"
-  ],
+  origin: true,   // reflect origin dynamically
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}))
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"]
+}));
+
+app.options("*", cors());
 
 app.use(express.json())
 app.use(cookieParser())

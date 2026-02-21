@@ -272,6 +272,12 @@ async function depositFunds(req, res) {
         })
     }
 
+    if (account.status !== "ACTIVE") {
+        return res.status(400).json({
+            message: "Account must be ACTIVE to accept deposits"
+        })
+    }
+
     const existingTransaction = await transactionModel.findOne({ idempotencyKey })
     if (existingTransaction) {
         return res.status(200).json({
