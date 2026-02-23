@@ -91,7 +91,10 @@ const webhookWorker = new Worker(
     },
     {
         connection,
-        concurrency: 5   // process up to 5 webhook deliveries in parallel
+        concurrency: 5,          // process up to 5 webhook deliveries in parallel
+        drainDelay: 30,          // wait 30s between polls when queue is empty (default: 5s)
+        stalledInterval: 120000, // check stalled jobs every 2 min (default: 30s)
+        maxStalledCount: 2       // mark job as stalled after 2 missed heartbeats
     }
 )
 

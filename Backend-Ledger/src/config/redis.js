@@ -30,7 +30,9 @@ const { logger } = require("./logger")
  */
 
 const redis = new IORedis(process.env.REDIS_URL || "redis://127.0.0.1:6379", {
-    maxRetriesPerRequest: null
+    maxRetriesPerRequest: null,
+    lazyConnect: true,          // don't open TCP until first command — serverless-friendly
+    enableOfflineQueue: true    // queue commands while reconnecting instead of failing
 })
 
 redis.on("connect", () => {

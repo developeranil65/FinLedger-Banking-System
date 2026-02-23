@@ -58,11 +58,8 @@ async function getAccountBalanceController(req, res) {
         })
     }
 
-    const balanceCacheService = require("../services/balanceCache.service")
-    const cached = await balanceCacheService.getCachedBalance(accountId)
-    const source = cached !== null ? "cache" : "database"
-
-    const balance = await account.getBalance();
+    // getBalance() returns { balance, source } — single Redis read
+    const { balance, source } = await account.getBalance();
 
     res.status(200).json({
         accountId: account._id,
@@ -99,7 +96,7 @@ async function closeAccountController(req, res) {
             })
         }
 
-        const balance = await account.getBalance();
+        const { balance } = await account.getBalance();
         if (balance !== 0) {
             return res.status(400).json({
                 message: `Cannot close account with non-zero balance (current balance: ₹${balance}). Please withdraw or transfer all funds first.`

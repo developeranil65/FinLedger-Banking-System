@@ -84,7 +84,7 @@ async function createTransaction(req, res) {
         })
     }
 
-    const balance = await fromUserAccount.getBalance()
+    const { balance } = await fromUserAccount.getBalance()
 
     if (balance < amount) {
         return res.status(400).json({
@@ -113,10 +113,6 @@ async function createTransaction(req, res) {
             transaction: transaction._id,
             type: "DEBIT"
         }], { session })
-
-        await (() => {
-            return new Promise((resolve) => setTimeout(resolve, 15 * 1000));
-        })()
 
         const creditLedgerEntry = await ledgerModel.create([{
             account: toAccount,

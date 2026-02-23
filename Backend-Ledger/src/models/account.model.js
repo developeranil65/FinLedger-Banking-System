@@ -28,7 +28,7 @@ accountSchema.index({ user: 1, status: 1 });
 /**
  * Get the current balance for this account.
  * Uses Cache-Aside pattern: checks Redis first, then aggregates ledger entries.
- * @returns {Promise<number>} Current balance
+ * @returns {Promise<{balance: number, source: string}>} Balance and source ("cache" or "database")
  */
 accountSchema.methods.getBalance = async function () {
     // Lazy-require to avoid circular dependency at module load time.
@@ -40,7 +40,7 @@ accountSchema.methods.getBalance = async function () {
 
     const cached = await balanceCacheService.getCachedBalance(accountId)
     if (cached !== null) {
-        return cached
+        return { balance: cached, source: "cache" }
     }
 
     const result = await ledgerModel.aggregate([
@@ -68,7 +68,7 @@ accountSchema.methods.getBalance = async function () {
 
     await balanceCacheService.setCachedBalance(accountId, balance)
 
-    return balance
+    return { balance, source: "database" }
 }
 
 

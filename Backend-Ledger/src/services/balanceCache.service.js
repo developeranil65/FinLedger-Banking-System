@@ -7,7 +7,7 @@ const { logger } = require("../config/logger")
  * Key format: balance:<accountId>
  */
 
-const BALANCE_TTL_SECONDS = 300  // 5 minutes
+const BALANCE_TTL_SECONDS = 1800  // 30 minutes (cache is busted on every transaction)
 
 /**
  * Get cached balance for an account.

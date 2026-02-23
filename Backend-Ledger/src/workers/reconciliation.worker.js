@@ -134,7 +134,10 @@ const reconciliationWorker = new Worker(
     },
     {
         connection,
-        concurrency: 3
+        concurrency: 1,          // reconciliation is background audit — 1 is sufficient
+        drainDelay: 30,          // wait 30s between polls when queue is empty (default: 5s)
+        stalledInterval: 120000, // check stalled jobs every 2 min (default: 30s)
+        maxStalledCount: 2       // mark job as stalled after 2 missed heartbeats
     }
 )
 
