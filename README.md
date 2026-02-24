@@ -6,7 +6,7 @@ A secure, scalable banking infrastructure built with a microservices-ready archi
 
 The system is designed for high availability and scalability, deployed on AWS using ECS Fargate.
 
-![Architecture Diagram](https://placeholder-image-url.com/architecture-diagram.png)
+<!-- ![Architecture Diagram](https://placeholder-image-url.com/architecture-diagram.png) -->
 
 ### Core Components
 

@@ -9,7 +9,7 @@ import axios from "axios"
  *   - Interceptor attaches the Bearer token from localStorage
  */
 const api = axios.create({
-    baseURL: "http://banking-alb-1727673503.eu-north-1.elb.amazonaws.com/api",
+    baseURL: import.meta.env.VITE_API_BASE_URL,
     withCredentials: true,
     headers: {
         "Content-Type": "application/json"
