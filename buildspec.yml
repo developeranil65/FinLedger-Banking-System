@@ -1,62 +1,34 @@
 version: 0.2
 
 env:
-  parameter-store:
-    # Docker Hub Credentials (to avoid rate limits)
-    DOCKERHUB_USERNAME: "/banking-system/dockerhub-username"
-    DOCKERHUB_PASSWORD: "/banking-system/dockerhub-password"
-    
-    # Application Secrets (injected at build time or runtime)
-    # Note: Runtime secrets like DB_URI should technically be injected by ECS task definition,
-    # but sometimes you need them during build (e.g. for static generation).
-    # Since this is a Node.js API, we don't bake secrets into the image.
-    # We only need Docker credentials for the build process itself.
+  variables:
+    AWS_REGION: eu-north-1
+    IMAGE_REPO_NAME: banking-system-backend
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 20
-      docker: 20
-  
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      
-      - echo Logging in to Docker Hub (to avoid rate limits)...
-      - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
-      
-      - REPO_URI_BACKEND=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/banking-system-backend
-      - REPO_URI_FRONTEND=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/banking-system-frontend
+      - echo Logging into Amazon ECR...
+      - ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - REPO_URI=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPO_URI
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-  
+
   build:
     commands:
-      - echo Build started on `date`
-      - echo Building the Docker image for Backend...
-      - docker build -t $REPO_URI_BACKEND:latest -f Backend-Ledger/Dockerfile Backend-Ledger
-      - docker tag $REPO_URI_BACKEND:latest $REPO_URI_BACKEND:$IMAGE_TAG
-      
-      - echo Building the Docker image for Frontend...
-      - docker build -t $REPO_URI_FRONTEND:latest -f Frontend-Ledger/Dockerfile Frontend-Ledger
-      - docker tag $REPO_URI_FRONTEND:latest $REPO_URI_FRONTEND:$IMAGE_TAG
-  
+      - echo Building backend Docker image...
+      - docker build -t $REPO_URI:latest Backend-Ledger
+      - docker tag $REPO_URI:latest $REPO_URI:$IMAGE_TAG
+
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPO_URI_BACKEND:latest
-      - docker push $REPO_URI_BACKEND:$IMAGE_TAG
-      
-      - docker push $REPO_URI_FRONTEND:latest
-      - docker push $REPO_URI_FRONTEND:$IMAGE_TAG
-      
-      - echo Writing image definitions file...
-      - printf '[{"name":"backend-container","imageUri":"%s"}]' $REPO_URI_BACKEND:$IMAGE_TAG > backend-imagedefinitions.json
-      - printf '[{"name":"frontend-container","imageUri":"%s"}]' $REPO_URI_FRONTEND:$IMAGE_TAG > frontend-imagedefinitions.json
+      - echo Pushing backend image...
+      - docker push $REPO_URI:latest
+      - docker push $REPO_URI:$IMAGE_TAG
+      - echo Creating ECS image definition file...
+      - printf '[{"name":"backend-container","imageUri":"%s"}]' "$REPO_URI:$IMAGE_TAG" > backend-imagedefinitions.json
 
 artifacts:
   files:
     - backend-imagedefinitions.json
-    - frontend-imagedefinitions.json
